@@ -1,5 +1,3 @@
-D'accord, voici un fichier complet au format Markdown présentant React.js avec un projet de gestion de tâches utilisant une API pour la gestion des tâches.
-
 ```markdown
 # Présentation de React.js
 
