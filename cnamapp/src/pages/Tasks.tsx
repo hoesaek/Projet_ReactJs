@@ -1,95 +1,71 @@
 import React, { useEffect, useState } from 'react';
 import Table from '../components/Table';
 import Modal from '../components/Modal';
-import {
-  fetchUsers,
-  fetchTasks,
-  addTask,
-  editTask,
-  deleteTask
-} from '../services/api'; 
-import IUser from '../../../api/src/types/IUser'; 
-import ITask from '../../../api/src/types/ITask'; 
+import { fetchUsers, fetchTasks, addTask, ITask, editTask, deleteTask, TaskStatus, IUser } from '../services/api'
 
-const TasksPage: React.FC = () => {
-  const [users, setUsers] = useState<IUser[]>([]);
+const TasksPage = () => {
   const [tasks, setTasks] = useState<ITask[]>([]);
-  const [isModalCreateOpen, setIsModalCreateOpen] = useState<boolean>(false);
-  const [newTask, setNewTask] = useState<Omit<ITask, "id">>({
-    taskName: '',
+  const [users, setUsers] = useState<IUser[]>([]);
+  const [isModalCreateOpen, setIsModalCreateOpen] = useState(false);
+  const [newTask, setNewTask] = useState<Omit<ITask, 'id'>>({
+    task_name: '',
     description: '',
     user: 0,
-    status: '',
+    status: TaskStatus.WAIT,
     isArchived: false
   });
   const [updatedTask, setUpdatedTask] = useState<ITask>({
     id: 0,
-    taskName: '',
+    task_name: '',
     description: '',
     user: 0,
-    status: '',
+    status: TaskStatus.WAIT,
     isArchived: false
   });
-  const [isModalUpdateOpen, setIsModalUpdateOpen] = useState<boolean>(false);
+  const [isModalUpdateOpen, setIsModalUpdateOpen] = useState(false);
 
-  const columns = ['Titre', 'Description', 'Status', 'Action'];
+  const columns = ['Title', 'Description', 'User', 'Status', 'Archived', 'Actions'];
 
   useEffect(() => {
-    const fetchData = async () => {
+    const getTasks = async () => {
       try {
-        const userData = await fetchUsers();
-        setUsers(userData);
-  
-        const tasksData = await fetchTasks();
-        setTasks(tasksData);
+        const taskbar = await fetchTasks();
+        setTasks(taskbar);
+        const useradd = await fetchUsers();
+        setUsers(useradd);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching tasks:', error);
       }
     };
-  
-    fetchData();
+    getTasks();
   }, []);
-  
 
   const addTaskHandler = async () => {
-    try {
-      const newTaskData = await addTask(newTask);
-      setTasks(prevTasks => [...prevTasks, newTaskData]);
-      setNewTask({
-        taskName: '',
-        description: '',
-        user: 0,
-        status: '',
-        isArchived: false
-      });
-      setIsModalCreateOpen(false);
-    } catch (error) {
-      console.error('Error adding task:', error);
-    }
+    const newTaskData = await addTask(newTask);
+    setTasks([...tasks, newTaskData]);
+    setNewTask({ task_name: '', description: '', user: undefined, status: TaskStatus.WAIT, isArchived: false });
+    setIsModalCreateOpen(false);
   };
 
   const updateTaskHandler = async () => {
-    try {
-      const updatedTaskData = await editTask(updatedTask);
-      setTasks(prevTasks => prevTasks.map(task => task.id === updatedTaskData.id ? updatedTaskData : task));
-      setIsModalUpdateOpen(false);
-    } catch (error) {
-      console.error('Error updating task:', error);
-    }
-  };
-
-  const removeTask = async (taskId: number) => {
-    try {
-      await deleteTask(taskId);
-      setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
-    } catch (error) {
-      console.error('Error deleting task:', error);
-    }
+    const updatedTaskData = await editTask(updatedTask);
+    setTasks(tasks.map(task => (task.id === updatedTaskData.id ? updatedTaskData : task)));
+    setIsModalUpdateOpen(false);
   };
 
   const updateTask = (task: ITask) => {
     setUpdatedTask(task);
     setIsModalUpdateOpen(true);
+  };
+
+  const removeTask = async (taskId: number) => {
+    await deleteTask(taskId);
+    setTasks(tasks.filter((task) => task.id !== taskId));
+  };
+
+  const getUserName = (userId: number | undefined): string => {
+    const user = users.find(user => user.id === userId);
+    return user ? user.first_name : '';
   };
 
   return (
@@ -98,37 +74,21 @@ const TasksPage: React.FC = () => {
         <h1 className="text-2xl font-semibold">Tasks</h1>
         <button
           onClick={() => setIsModalCreateOpen(true)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          className="px-4 py-2 bg-orange-500 text-black rounded hover:bg-orange-600"
         >
           Add Task
         </button>
       </div>
-      <Table<ITask>
-        data={tasks}
-        columns={columns}
-        deleteRow={removeTask}
-        update={updateTask}
-      />
+      <Table<ITask> data={tasks} columns={columns} deleteRow={removeTask} update={updateTask} transformUserIdToName={getUserName} />
 
       <Modal isOpen={isModalCreateOpen} onClose={() => setIsModalCreateOpen(false)}>
         <div>
           <h2 className="text-xl font-semibold mb-2">Add Task</h2>
-          <select
-            value={newTask.user}
-            onChange={(e) => setNewTask({ ...newTask, user: parseInt(e.target.value) })}
-            className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
-          >
-            {users.map(user => (
-              <option key={user.id} value={user.id}>
-                {`${user.first_name} ${user.last_name}`}
-              </option>
-            ))}
-          </select>
           <input
             type="text"
             placeholder="Title"
-            value={newTask.taskName}
-            onChange={(e) => setNewTask({ ...newTask, taskName: e.target.value })}
+            value={newTask.task_name}
+            onChange={(e) => setNewTask({ ...newTask, task_name: e.target.value })}
             className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
           />
           <input
@@ -138,51 +98,43 @@ const TasksPage: React.FC = () => {
             onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
             className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
           />
-          <input
-            type="text"
-            placeholder="Status"
+          <select
+            value={newTask.user}
+            onChange={(e) => setNewTask({ ...newTask, user: Number(e.target.value) })}
+            className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-4 w-full"
+          >
+            {users.map(user => (
+              <option key={user.id} value={user.id}>{user.first_name}</option>
+            ))}
+          </select>
+          <select
             value={newTask.status}
-            onChange={(e) => setNewTask({ ...newTask, status: e.target.value })}
+            onChange={(e) => setNewTask({ ...newTask, status: e.target.value as TaskStatus })}
             className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
-          />
-          <label className="inline-flex items-center mt-2">
-            <input
-              type="checkbox"
-              checked={newTask.isArchived}
-              onChange={(e) => setNewTask({ ...newTask, isArchived: e.target.checked })}
-              className="form-checkbox"
-            />
-            <span className="ml-2">Archived</span>
-          </label>
-          <div className="flex justify-end mt-4">
+          >
+            <option value={TaskStatus.WAIT}>{TaskStatus.WAIT}</option>
+            <option value={TaskStatus.IN_PROGRESS}>{TaskStatus.IN_PROGRESS}</option>
+            <option value={TaskStatus.TERMINATED}>{TaskStatus.TERMINATED}</option>
+          </select>
+          <div className="flex justify-end">
             <button
               onClick={addTaskHandler}
-              className="px-4 py-2 bg-blue-500 text-white  rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-orange-500 text-black rounded hover:bg-orange-600"
             >
               Add
             </button>
           </div>
         </div>
       </Modal>
+
       <Modal isOpen={isModalUpdateOpen} onClose={() => setIsModalUpdateOpen(false)}>
         <div>
-          <h2 className="text-xl font-semibold mb-2">Edit Task</h2>
-          <select
-            value={updatedTask.user}
-            onChange={(e) => setUpdatedTask({ ...updatedTask, user: parseInt(e.target.value) })}
-            className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
-          >
-            {users.map(user => (
-              <option key={user.id} value={user.id}>
-                {`${user.first_name} ${user.last_name}`}
-              </option>
-            ))}
-          </select>
+          <h2 className="text-xl font-semibold mb-2">Update Task</h2>
           <input
             type="text"
             placeholder="Title"
-            value={updatedTask.taskName}
-            onChange={(e) => setUpdatedTask({ ...updatedTask, taskName: e.target.value })}
+            value={updatedTask.task_name}
+            onChange={(e) => setUpdatedTask({ ...updatedTask, task_name: e.target.value })}
             className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
           />
           <input
@@ -192,28 +144,40 @@ const TasksPage: React.FC = () => {
             onChange={(e) => setUpdatedTask({ ...updatedTask, description: e.target.value })}
             className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
           />
-          <input
-            type="text"
-            placeholder="Status"
+          <select
+            value={updatedTask.user}
+            onChange={(e) => setUpdatedTask({ ...updatedTask, user: Number(e.target.value) })}
+            className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-4 w-full"
+          >
+            
+            {users.map(user => (
+              <option key={user.id} value={user.id}>{user.first_name}</option>
+            ))}
+          </select>
+          <select
             value={updatedTask.status}
-            onChange={(e) => setUpdatedTask({ ...updatedTask, status: e.target.value })}
+            onChange={(e) => setUpdatedTask({ ...updatedTask, status: e.target.value as TaskStatus })}
             className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-2 w-full"
+          >
+            <option value={TaskStatus.WAIT}>{TaskStatus.WAIT}</option>
+            <option value={TaskStatus.IN_PROGRESS}>{TaskStatus.IN_PROGRESS}</option>
+            <option value={TaskStatus.TERMINATED}>{TaskStatus.TERMINATED}</option>
+          </select>
+          <input
+            id="isArchived"
+            type="checkbox"
+            placeholder="Archived"
+            checked={updatedTask.isArchived}
+            onChange={(e) => setUpdatedTask({ ...updatedTask, isArchived: Boolean(e.target.checked) })}
+            className="px-2 py-1 bg-gray-200 text-gray-700 rounded mb-4 w-full"
           />
-          <label className="inline-flex items-center mt-2">
-            <input
-              type="checkbox"
-              checked={updatedTask.isArchived}
-              onChange={(e) => setUpdatedTask({ ...updatedTask, isArchived: e.target.checked })}
-              className="form-checkbox"
-            />
-            <span className="ml-2">Archived</span>
-          </label>
-          <div className="flex justify-end mt-4">
+          <label htmlFor="isArchived"> Archived</label> 
+          <div className="flex justify-end">
             <button
               onClick={updateTaskHandler}
-              className="px-4 py-2 bg-blue-500 text-white  rounded hover:bg-blue-600"
+              className="px-4 py-2 bg-orange-500 text-black rounded hover:bg-orange-600"
             >
-              Modify
+              Update
             </button>
           </div>
         </div>

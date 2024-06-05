@@ -1,20 +1,26 @@
 const BASE_URL = "http://localhost:8090";
 
+export enum TaskStatus {
+  WAIT = "WAIT",
+  IN_PROGRESS = "IN_PROGRESS",
+  TERMINATED = "TERMINATED",
+}
+
 interface IUser {
   id: number;
   first_name: string;
   last_name: string;
   email: string;
 }
-
 interface ITask {
   id: number;
-  taskName: string; 
+  task_name: string;
   description: string;
-  user: number;
-  status: string;
-  isArchived: boolean; 
+  user?: number;
+  status: TaskStatus;
+  isArchived: boolean;
 }
+
 
 const fetchUsers = async (): Promise<IUser[]> => {
   const response = await fetch(`${BASE_URL}/users`);
@@ -22,13 +28,13 @@ const fetchUsers = async (): Promise<IUser[]> => {
   return data as IUser[];
 };
 
-const getUser = async (id : number): Promise<IUser> => {
+const getUser = async (id: number): Promise<IUser> => {
   const response = await fetch(`${BASE_URL}/users/${id}`);
   const data = await response.json();
   return data as IUser;
-}
+};
 
-const addUser = async (user: Omit <IUser, "id">): Promise<IUser> => {
+const addUser = async (user: Omit<IUser, "id">): Promise<IUser> => {
   const response = await fetch(`${BASE_URL}/users`, {
     method: "POST",
     headers: {
@@ -41,7 +47,7 @@ const addUser = async (user: Omit <IUser, "id">): Promise<IUser> => {
 };
 
 const editUser = async (user: IUser): Promise<IUser> => {
-  console.log(user , "to update")
+  console.log(user, "to update");
   const response = await fetch(`${BASE_URL}/users/${user.id}`, {
     method: "PUT",
     headers: {
@@ -54,79 +60,80 @@ const editUser = async (user: IUser): Promise<IUser> => {
 };
 
 const deleteUser = async (userId: number): Promise<void> => {
-  console.log("userId", userId)
+  console.log("userId", userId);
   await fetch(`${BASE_URL}/users/${userId}`, {
     method: "DELETE",
   });
 };
+
 const getUserTasks = async (userId: number): Promise<void> => {
-  console.log("userId", userId)
+  console.log("userId", userId);
   await fetch(`${BASE_URL}/users/${userId}/tasks`, {
     method: "GET",
   });
-}
+};
 
-const fetchTasks = async (userId?: number): Promise<ITask[]> => {
-  let url = `${BASE_URL}/tasks`;
-  if (userId !== undefined) {
-    url += `?userId=${userId}`;
-  }
-  const response = await fetch(url);
+// api.ts
+const fetchTasks = async (): Promise<ITask[]> => {
+  const response = await fetch(`${BASE_URL}/tasks`);
+  const data = await response.json();
+  return data;
+};
+
+const fetchUserTasks = async (userId: number): Promise<ITask[]> => {
+  const response = await fetch(`${BASE_URL}/users/${userId}/tasks`);
   const data = await response.json();
   return data as ITask[];
 };
 
-const getTask = async (taskId: number): Promise<ITask> => {
-  const response = await fetch(`${BASE_URL}/tasks/${taskId}`);
-  const data = await response.json();
-  return data as ITask;
-};
-
-const addTask = async (task: Omit<ITask, "id">): Promise<ITask> => {
+const addTask = async (task: Omit<ITask, 'id'>): Promise<ITask> => {
   const response = await fetch(`${BASE_URL}/tasks`, {
-    method: "POST",
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(task),
   });
   const data = await response.json();
-  return data as ITask;
+  return data;
 };
 
 const editTask = async (task: ITask): Promise<ITask> => {
   const response = await fetch(`${BASE_URL}/tasks/${task.id}`, {
-    method: "PUT",
+    method: 'PUT',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify(task),
   });
   const data = await response.json();
-  return data as ITask;
+  return data;
 };
 
 const deleteTask = async (taskId: number): Promise<void> => {
   await fetch(`${BASE_URL}/tasks/${taskId}`, {
-    method: "DELETE",
-    
+    method: 'DELETE',
   });
 };
 
-export {  
+const getTask = async (id: number): Promise<ITask> => {
+  const response = await fetch(`${BASE_URL}/tasks/${id}`);
+  const data = await response.json();
+  return data as ITask;
+};
+
+export {
   fetchUsers,
+  fetchUserTasks,
   getUser,
   addUser,
   editUser,
   deleteUser,
-
   getUserTasks,
   fetchTasks,
-  getTask,
   addTask,
   editTask,
   deleteTask,
+  getTask
 };
-
-
 export type { IUser, ITask };
