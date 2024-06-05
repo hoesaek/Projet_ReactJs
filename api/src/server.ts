@@ -1,7 +1,7 @@
 import  express , {Request,Response, Express }  from "express";
 import bodyParser from "body-parser";;
 import {getAllUsers ,getUserById, addUser, countUsers, getListTasks , updateUser, deleteUser} from './handlers/user';
-import {getAllTasks ,getTaskById, addTask, countTasks, getUser, deleteTask} from './handlers/task';
+import {getAllTasks ,getTaskById, addTask, updateTask, countTasks, getUser, deleteTask} from './handlers/task';
 import { initDB } from "./database/Dao";
 import cors from 'cors';
 
@@ -33,15 +33,12 @@ app.get('/users/', getAllUsers );
 app.delete('/users/:id', deleteUser );
 
 app.post('/tasks/', addTask);
-app.get('/tasks/count', countTasks );
-app.get('/tasks/:id/user', getUser);
-app.get('/tasks/:id', getTaskById );
 app.get('/tasks/', getAllTasks);
+app.get('/tasks/count', countTasks );
+app.get('/tasks/:id', getTaskById );
+app.put('/tasks/:id', updateTask);
 app.delete('/tasks/:id', deleteTask );
-
-
-
-
+app.get('/tasks/:id/user', getUser);
 
 app.post('/tasks', (req : Request, res : Response) => {
     console.log(req.body);

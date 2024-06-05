@@ -38,6 +38,7 @@ const addTask = async (req: Request, res: Response) => {
       isArchived: false,
     });
 
+    console.log("test update addt");
     res.json(result);
   } catch (e) {
     res.send({ error: e });
@@ -77,4 +78,18 @@ const deleteTask = async (req: Request, res: Response) => {
   
 }
 
-export { getAllTasks, getTaskById, addTask, countTasks, getUser, deleteTask };
+const updateTask = async (req: Request, res: Response) => {
+  const task = req.body;
+  console.log("test update");
+  const id = req.params.id as unknown as number;
+  try {
+      const updatedTask = await taskDao.updateById(task, id);
+      console.log(updatedTask)
+      res.json(updatedTask);
+  } catch (error) {
+      res.json(error);
+  }
+
+}
+
+export { getAllTasks, getTaskById, addTask, updateTask, countTasks, getUser, deleteTask };

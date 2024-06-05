@@ -41,7 +41,7 @@ export interface TaskDao {
 
 const dbPath = process.env.DATABASE_NAME
   ? process.env.DATABASE_NAME
-  : "test.db";
+  : "tasks.db";
 let db: Database;
 
 const initDB = async () => {
